@@ -1,22 +1,12 @@
 import asyncio
 import time
-
 import zmq.asyncio
-
 from DynamicPlot import Plot
 import multiprocessing
 from multiprocessing import Process
 import numpy as np
-import threading
 import json
-
-def to_json(topic, data):
-    return json.dumps({"topic": topic, "data": data})
-
-# def from_json(topicmsg):
-#     json_string = json.loads(topicmsg)
-#     topic = json_string["topic"]
-#     message = json_string["message"]
+from myo_zmq.common import ZMQ_Topic
 
 def runGraphEMG(emg_queue):
     d_plot_2 = Plot(rowcol=(2, 4), max_display_capacity=100)
@@ -125,7 +115,7 @@ async def Loop(imu_queue, emg_queue):
 
         data['time'] = epoch_time
 
-        if(topic == "imu"):
+        if topic == ZMQ_Topic.IMU:
             imu_queue.put(data)
             # print(packet)
             t1 = time.time()
@@ -133,9 +123,9 @@ async def Loop(imu_queue, emg_queue):
             if t1-t0 > 1:
                 t0 = time.time()
                 print(count)
-
                 count = 0
-        elif (topic == "emg"):
+
+        elif topic == ZMQ_Topic.EMG:
             emg_queue.put(data)
 
 

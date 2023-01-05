@@ -1,10 +1,9 @@
 import math
-
 import open_myo as myo
 import time
 import json
 import zmq
-from common import ZMQ_Topic
+from myo_zmq.common import ZMQ_Topic
 
 def send(topic, data):
     if socket is None:
