@@ -1,7 +1,7 @@
 import asyncio
 import time
 import zmq.asyncio
-from DynamicPlot import Plot
+from dynamic_plot import Plot
 import multiprocessing
 from multiprocessing import Process
 import numpy as np
