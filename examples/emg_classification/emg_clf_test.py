@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 # Data loading
-with open("../emg_data/emg_data_20180210-145505.pkl",'r') as fp:
+with open("../emg_data/emg_data_20180210-145505.pkl",'rb') as fp:
     emg_data = pickle.load(fp)
 
 n_classes = len(emg_data)
@@ -30,7 +30,7 @@ for g in emg_data.keys():
     class_labels.append(g)
     for i in range(n_iterations):
         for c in range(n_channels):
-            emg.append(np.array(zip(*emg_data[g][i])[c][0:999]))
+            emg.append(np.array(list(zip(*emg_data[g][i]))[c][0:999]))
 
 #for z in range(n_signals):
 #    emg[z] = emg[z]*(5/2)/2**24

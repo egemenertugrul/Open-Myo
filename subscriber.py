@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import time
 import zmq.asyncio
 from dynamic_plot import Plot
@@ -8,8 +9,21 @@ import numpy as np
 import json
 from myo_zmq.common import ZMQ_Topic
 
+import matplotlib as mpl
+
+def clamp(n, smallest, largest): return max(smallest, min(n, largest))
+
+def remap(old_val, old_min, old_max, new_min, new_max): return (new_max - new_min)*(old_val - old_min) / (old_max - old_min) + new_min
+
+def colorFader(c1,c2,mix=0): #fade (linear interpolate) from color c1 (at mix=0) to c2 (mix=1)
+    c1=np.array(mpl.colors.to_rgb(c1))
+    c2=np.array(mpl.colors.to_rgb(c2))
+    return mpl.colors.to_hex((1-mix)*c1 + mix*c2)
+
 def runGraphEMG(emg_queue):
-    d_plot_2 = Plot(rowcol=(2, 4), max_display_capacity=100)
+    d_plot_2 = Plot(rowcol=(2, 4), max_display_capacity=500, ylim=(-150, 150))
+
+    listen_significant_changes = True
 
     d_plot_2.set_title((1, 1), "EMG 1")
     d_plot_2.set_title((1, 2), "EMG 2")
@@ -20,28 +34,85 @@ def runGraphEMG(emg_queue):
     d_plot_2.set_title((2, 3), "EMG 7")
     d_plot_2.set_title((2, 4), "EMG 8")
 
+    if listen_significant_changes:
+        mean_list_size = 10
+        recorded_data_list = []
+        last_means = []
+        threshold = 5
+
+    red = "#ff0000"
+    green = "#00ff00"
+    blue = "#0000ff"
+
+    def process_data(epoch_time, emg_data):
+        nonlocal last_means
+
+        if listen_significant_changes:
+            recorded_data_list.append(emg_data)
+            if len(recorded_data_list) > mean_list_size:
+                recorded_data_list.pop(0)
+
+            cur_means = np.mean(recorded_data_list, axis=0)
+            significant_change_list = None
+            diff = None
+            if len(last_means):
+                diff = cur_means - last_means
+                significant_change_list = np.abs(diff) > threshold
+            last_means = cur_means
+
+            if diff is not None and significant_change_list is not None:
+                for (i, j) in itertools.product(range(d_plot_2.row_count), range(d_plot_2.column_count)):
+                    idx = i * d_plot_2.row_count + j
+                    is_significant_change = significant_change_list[idx]
+                    difference = diff[idx]
+                    is_diff_positive = difference >= 0
+
+                    # if is_significant_change:
+                    color = blue
+
+                    scale = clamp(abs(difference) / threshold, 0, 1)
+
+                    if is_diff_positive:
+                        # color = "#00ff00"
+                        color = colorFader(blue, red, scale)
+                    # else:
+                    #     color = "#ff0000"
+                    #     # color = colorFader(red, blue, scale)
+                    d_plot_2.change_color((i + 1, j + 1), color)
+                    # else:
+                    #     d_plot_2.change_color((i+1, j+1), None)
+
+        d_plot_2.add_to((1, 1), (epoch_time, emg_data[0]))
+        d_plot_2.add_to((1, 2), (epoch_time, emg_data[1]))
+        d_plot_2.add_to((1, 3), (epoch_time, emg_data[2]))
+        d_plot_2.add_to((1, 4), (epoch_time, emg_data[3]))
+        d_plot_2.add_to((2, 1), (epoch_time, emg_data[4]))
+        d_plot_2.add_to((2, 2), (epoch_time, emg_data[5]))
+        d_plot_2.add_to((2, 3), (epoch_time, emg_data[6]))
+        d_plot_2.add_to((2, 4), (epoch_time, emg_data[7]))
+
+
     while True:
         while not emg_queue.empty():
             data = emg_queue.get()
-            emg_data = list(map(float, data['emg']))
+
+            shape = np.array(data['emg']).shape
             epoch_time = float(data['time'])
 
-            d_plot_2.add_to((1, 1), (epoch_time, emg_data[0]))
-            d_plot_2.add_to((1, 2), (epoch_time, emg_data[1]))
-            d_plot_2.add_to((1, 3), (epoch_time, emg_data[2]))
-            d_plot_2.add_to((1, 4), (epoch_time, emg_data[3]))
-            d_plot_2.add_to((2, 1), (epoch_time, emg_data[4]))
-            d_plot_2.add_to((2, 2), (epoch_time, emg_data[5]))
-            d_plot_2.add_to((2, 3), (epoch_time, emg_data[6]))
-            d_plot_2.add_to((2, 4), (epoch_time, emg_data[7]))
-
+            if shape[0] == 2:
+                for i in range(len(data['emg'])):
+                    emg_data = data['emg'][i]
+                    emg_data = list(map(float, emg_data))
+                    process_data(epoch_time, emg_data)
+            else:
+                emg_data = list(map(float, data['emg']))
+                process_data(epoch_time, emg_data)
         d_plot_2.flush()
 
-
 def runGraphIMU(imu_queue):
-    take_mean = True
+    take_mean = False
 
-    d_plot = Plot(rowcol=(2, 3), max_display_capacity=100, style_args=
+    d_plot = Plot(rowcol=(2, 3), max_display_capacity=500, style_args=
     [
         [
             ['r'], ['g'], ['b']
@@ -105,8 +176,10 @@ def runGraphIMU(imu_queue):
 
 
 async def Loop(imu_queue, emg_queue):
-    t0 = time.time()
-    count = 0
+    imu_t0 = time.time()
+    emg_t0 = time.time()
+    imu_count = 0
+    emg_count = 0
     while True:
         json_message = json.loads(socket.recv_json())
         topic = json_message["topic"]
@@ -118,15 +191,22 @@ async def Loop(imu_queue, emg_queue):
         if topic == ZMQ_Topic.IMU:
             imu_queue.put(data)
             # print(packet)
-            t1 = time.time()
-            count = count + 1
-            if t1-t0 > 1:
-                t0 = time.time()
-                print(count)
-                count = 0
+            time_now = time.time()
+            imu_count = imu_count + 1
+            if time_now-imu_t0 > 1:
+                imu_t0 = time.time()
+                print("IMU Hz: ", imu_count)
+                imu_count = 0
 
         elif topic == ZMQ_Topic.EMG:
             emg_queue.put(data)
+
+            time_now = time.time()
+            emg_count = emg_count + 1
+            if time_now - emg_t0 > 1:
+                emg_t0 = time.time()
+                print("EMG Hz: ", emg_count)
+                emg_count = 0
 
 
 if __name__ == '__main__':

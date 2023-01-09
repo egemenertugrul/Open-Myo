@@ -1,20 +1,26 @@
 import math
 
+import matplotlib.lines
 from matplotlib import pyplot as plt
 
 plt.ion()
 
 
 class AxesWrapper:
-    def __init__(self, lines, ax, max_display_capacity=None):
+    def __init__(self, lines : matplotlib.lines.Line2D, ax, max_display_capacity=None, ylim=None):
         self.lines = lines
         self.ax = ax
         self.ax.set_autoscalex_on(True)
-        self.ax.set_autoscaley_on(True)
+        if ylim is not None:
+            self.ax.set_ylim(ylim[0], ylim[1])
+        else:
+            self.ax.set_autoscaley_on(True)
+
         self.ax.grid()
         self.x_data = []
         self.y_data = []
         self.max_display_capacity = max_display_capacity
+        self.default_color = self.lines.get_color()
 
     def add(self, data):
         x_data, y_data = data
@@ -31,6 +37,12 @@ class AxesWrapper:
         # self.lines.set_xdata(self.x_data)
         # self.lines.set_ydata(self.y_data)
         self.lines.set_data(self.x_data, self.y_data)
+
+    def change_color(self, color):
+        self.lines.set_color(color)
+
+    def revert_default_color(self):
+        self.lines.set_color(self.default_color)
 
     def __getattr__(self, item):
         return getattr(self.ax, item)
@@ -57,6 +69,16 @@ class Plot:
         else:
             self.axes[row][col].add(xy_val)
 
+    def change_color(self, rowcol, color):
+        row, col = rowcol
+        row = row - 1
+        col = col - 1
+        ax = self.axes[row][col]
+        if color is None:
+            ax.revert_default_color()
+            return
+        ax.change_color(color)
+
     def flush(self):
         for i in range(len(self.axes)):
             for j in range(len(self.axes[0])):
@@ -65,19 +87,19 @@ class Plot:
         self.figure.canvas.draw()
         self.figure.canvas.flush_events()
 
-    def __init__(self, rowcol, max_display_capacity=None, style_args=None):
+    def __init__(self, rowcol, max_display_capacity=None, style_args=None, ylim=None):
         rows, cols = rowcol
         self.figure, axes = plt.subplots(rows, cols, squeeze=False, sharex='none', sharey='none')
         self.figure.tight_layout()
 
-        row_count = len(axes)
-        col_count = len(axes[0])
+        self.row_count = rows
+        self.column_count = cols
 
         self.axes = []
         self.lines = []
-        for i in range(row_count):
+        for i in range(self.row_count):
             self.axes.append([])
-            for j in range(col_count):
+            for j in range(self.column_count):
                 ax = axes[i, j]
 
                 if style_args:
@@ -90,7 +112,7 @@ class Plot:
                 self.lines.append(lines)
                 ax.set_title(str(i + j))
 
-                new_ax = AxesWrapper(lines, ax, max_display_capacity)
+                new_ax = AxesWrapper(lines, ax, max_display_capacity, ylim)
                 self.axes[i].append(new_ax)
 
 
