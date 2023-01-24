@@ -125,7 +125,7 @@ class Recorder(BaseEventEmitter):
             data = self.lastRecording.get_data()
             df = pd.DataFrame(data)
             file_path = self.lastRecording.get_file_path()
-            df.to_csv(Path(file_path), header=False)
+            df.to_csv(Path(file_path), header=False, index=False)
             print(f"Saved recording to file '{self.lastRecording.get_file_path()}', with duration of {len(data)} frames")
             self.emit("save_recording")
         self.reset()
