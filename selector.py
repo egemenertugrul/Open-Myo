@@ -70,16 +70,49 @@ def highlight_single(all_curves_in_subplot, signal_id):
     set_alpha(all_curves_in_subplot[signal_id], 1)
 
 
-hover_cid = -1
-leave_axes_cid = -1
+hover_cid = None
+leave_axes_cid = None
 
 def on_selector_move(xmin, xmax):
-    reset()
     global hover_cid; global leave_axes_cid
-    fig.canvas.mpl_disconnect(hover_cid)
-    fig.canvas.mpl_disconnect(leave_axes_cid)
+    if hover_cid and leave_axes_cid:
+        reset()
+        fig.canvas.mpl_disconnect(hover_cid)
+        fig.canvas.mpl_disconnect(leave_axes_cid)
+        hover_cid = None
+        leave_axes_cid = None
+
+desired_range = 200
 
 def on_selector_select(xmin, xmax):
+    x_range = x[-1] - x[0]
+
+    if x_range < desired_range:
+        print(f"Data ({x_range}) is not long enough to hold the desired range ({desired_range})")
+
+    min_out_of_bounds = xmin < 0
+    max_out_of_bounds = xmax > x_range
+    selection_range = xmax - xmin
+    is_short_length = selection_range != desired_range
+    new_xmin = xmin
+    new_xmax = xmax
+
+    if min_out_of_bounds or max_out_of_bounds or is_short_length:
+        if min_out_of_bounds:
+            new_xmin = max(0, xmin)
+            new_xmax = new_xmin + 200
+
+        if max_out_of_bounds:
+            new_xmax = min(x_range, xmax)
+            new_xmin = new_xmax - 200
+
+        if is_short_length:
+            new_xmax = new_xmin + 200
+
+        span.extents = (new_xmin, new_xmax)
+        span.onselect(new_xmin, new_xmax)
+        return
+
     global hover_cid; global leave_axes_cid
     hover_cid = fig.canvas.mpl_connect('motion_notify_event', on_plot_hover)
     leave_axes_cid = fig.canvas.mpl_connect('axes_leave_event', leave_axes)
@@ -215,9 +248,12 @@ span = SpanSelector(
     ax1,
     on_selector_select,
     "horizontal",
+    # minspan=200,
+    span_stays=True,
     onmove_callback=on_selector_move,
+    grab_range=1,
     useblit=True,
-    props=dict(alpha=0.5, facecolor="tab:blue"),
+    props=dict(alpha=0.2, facecolor="tab:blue"),
     interactive=True,
     drag_from_anywhere=True
 )
