@@ -12,11 +12,29 @@ def disjoint_segmentation(emg, n_samples=150):
     segmented_emg = np.zeros((n_samples, n_segments))
     for s in range(n_segments):
         for n in range(length, n_samples + length):
+            print(n, length, s)
             segmented_emg[n - length, s] = emg[
                 n]  # 2D matrix with a EMG signal divided in s segments, each one with n samples
         length = length + n_samples
     length = 0
     return segmented_emg
+
+def disjoint_segmentation_2(emg, n_samples=150):
+    n_segments = int(np.floor(emg.shape[0] / n_samples))  # number of segments
+    # length = 0
+    # segmented_emg = np.zeros((n_samples, n_segments))
+    # for s in range(n_segments):
+    #     for n in range(length, n_samples + length):
+    #         print(n, length, s)
+    #         segmented_emg[n - length, s] = emg[
+    #             n]  # 2D matrix with a EMG signal divided in s segments, each one with n samples
+    #     length = length + n_samples
+    # length = 0
+    segments = []
+    for seg in range(n_segments):
+        s = seg * n_samples
+        segments.append(emg[s:s+n_samples])
+    return np.array(segments)
 
 
 def overlapping_segmentation(region, n_samples=52, skip=5):
@@ -42,11 +60,26 @@ def overlapping_segmentation(region, n_samples=52, skip=5):
 
     return np.array(segmented_emg)
 
+def overlapping_segmentation_2(region, n_samples=52, skip=5):
+    total_duration = len(region)
+    # expected_segment_count = math.floor(((total_duration - n_samples) / skip) + 1)
+    segmented_emg = []
+    idx = 0
+    while idx + n_samples <= total_duration:
+        s = idx
+        e = idx + n_samples
+        segmented_emg.append(region[s:e])
+        idx += skip
+
+    # print(expected_segment_count, len(segmented_emg))
+
+    return np.array(segmented_emg)
+
 def mav(segment):
     mav = np.mean(np.abs(segment))
     return mav
 
-
+# MAX: 128
 def rms(segment):
     rms = np.sqrt(np.mean(np.power(segment, 2)))
     return rms
@@ -61,7 +94,7 @@ def ssi(segment):
     ssi = np.sum(np.abs(np.power(segment, 2)))
     return ssi
 
-
+# MAX: segment length - 1 (e.g. 51)
 def zc(segment):
     nz_segment = list()
     nz_indices = np.nonzero(segment)[0]  # Finds the indices of the segment with nonzero values
@@ -74,11 +107,14 @@ def zc(segment):
             zc = zc + 1
     return zc
 
-
+# MAX: 13005
 def wl(segment):
     wl = np.sum(np.abs(np.diff(segment)))
     return wl
 
+if __name__ == '__main__':
+    a = [-128, 127] * 26
+    print(zc(a))
 
 # def ssc(segment):
 #    N = len(segment)

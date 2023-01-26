@@ -20,6 +20,9 @@ class Recording:
         self.full_file_path = full_file_path
         self.data = data
 
+    def fill_from_file(self, **params):
+        self.data = pd.read_csv(self.full_file_path, **params)
+
     def add(self, data_to_add):
         self.data.append(data_to_add)
 

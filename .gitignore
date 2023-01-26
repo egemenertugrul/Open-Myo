@@ -104,3 +104,6 @@ ENV/
 # *.pkl
 
 .idea/
+/logs/
+/models/
+/michidk-dataset/

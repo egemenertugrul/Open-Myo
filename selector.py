@@ -4,10 +4,20 @@ from matplotlib.widgets import SpanSelector
 import pandas as pd
 
 from features import disjoint_segmentation, wl, overlapping_segmentation, rms, mav, zc
-from matplotlib import collections  as mc
 
 n_samples = 52
 skip = 5
+
+ax2_fn = rms
+ax3_fn = wl
+
+signal_range = range(0, 8)
+signal_range_length = len(signal_range)
+
+# y = pd.read_csv("recordings/palm_open_0.csv", usecols = signal_range)
+y = pd.read_csv("michidk-dataset/s1_r_1/s1_r_1-paper-4-emg.csv", usecols = range(2, 10))
+x = range(1, y.shape[0] + 1)
+y = np.array(y)
 
 props = dict(boxstyle='round', facecolor='white', alpha=0.35)
 default_alpha_val = 0.2
@@ -16,16 +26,6 @@ fig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(8, 6))
 
 ax1.set_title('Press left mouse button and drag '
               'to select a region in the top graph')
-
-signal_range = range(0, 8)
-signal_range_length = len(signal_range)
-
-y = pd.read_csv("recordings/palm_open_0.csv", usecols = signal_range)
-x = range(1, y.shape[0] + 1)
-y = np.array(y)
-
-ax2_fn = rms
-ax3_fn = wl
 
 import colorsys
 HSV_tuples = [(x*1.0/signal_range_length, 0.5, 0.5) for x in range(signal_range_length)]
@@ -136,7 +136,7 @@ def on_selector_select(xmin, xmax):
     ax_plot_pairs[2] = (ax3, feature_plots_2)
 
     for idx, col in enumerate(y[indmin:indmax].T):
-        region_y = col
+        region_y = col  # for each channel
         # region_y = y[indmin:indmax]
 
         if len(region_x) >= 2:
@@ -234,8 +234,8 @@ def update_all_plots(signal_index):
 
 def reset():
     set_alpha(signal_plots, 0.2)
-    set_alpha(feature_plots_1, 1)
-    set_alpha(feature_plots_2, 1)
+    set_alpha(feature_plots_1, 0.2)
+    set_alpha(feature_plots_2, 0.2)
     update_text(-1)
 
 def leave_axes(event):
