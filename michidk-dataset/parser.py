@@ -11,7 +11,7 @@ import pandas as pd
 import sklearn.model_selection
 from keras import Sequential
 from keras.callbacks import TensorBoard, ModelCheckpoint
-from keras.layers import LSTM, Dense, Dropout, BatchNormalization
+from keras.layers import LSTM, Dense, Dropout, BatchNormalization, TimeDistributed, Conv1D, MaxPooling1D, Flatten
 # from keras.optimizers import Adam
 from keras.optimizer_v2.adam import Adam
 from sklearn import preprocessing
@@ -133,17 +133,30 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter):
     # print(len(X_data), len(Y_data_enc))
 
 if __name__ == '__main__':
-    subjects = range(1, 2)  # range(1, SUBJECTS_COUNT + 1)
+    subjects = range(1, SUBJECTS_COUNT + 1)  # range(1, 2)
     gestures = ['rock', 'paper', 'scissors']  # , 'paper', 'scissors'
     arms = ['r']
+
+    n_steps, n_length, n_features = 4, 50, 8
+
     X_data, Y_data = parse_recordings_as_dataset(subjects, gestures, arms)
+    X_data = X_data.reshape((X_data.shape[0], n_steps, n_length, n_features))
 
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X_data, Y_data, test_size=0.2,
                                                                                 random_state=10, shuffle=True)
 
+
     model = Sequential()
 
-    model.add(LSTM(100, input_shape=X_train.shape[1:], return_sequences=False, recurrent_dropout=0.35, dropout=0.05, activation='tanh'))
+    model.add(
+    TimeDistributed(Conv1D(filters=64, kernel_size=3, activation='relu'), input_shape=(None, n_length, n_features)))
+    model.add(TimeDistributed(Conv1D(filters=64, kernel_size=3, activation='relu')))
+    model.add(TimeDistributed(Dropout(0.5)))
+    model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
+    model.add(TimeDistributed(Flatten()))
+
+    # input_shape=X_train.shape[1:],
+    model.add(LSTM(100, return_sequences=False, recurrent_dropout=0.35, dropout=0.05, activation='tanh'))
     # model.add(Dropout(0.2))
     model.add(BatchNormalization())
 
@@ -177,9 +190,9 @@ if __name__ == '__main__':
     checkpoint = ModelCheckpoint("../models/{}.model".format(filepath, monitor='val_acc', verbose=1,
                                                              save_best_only=True, mode='auto'))
 
-    history = model.fit(X_train, y_train, epochs=15, batch_size=64, verbose=2,
-                        # validation_data=(X_test, y_test),
-                        # callbacks=[tensorboard, checkpoint]
+    history = model.fit(X_train, y_train, epochs=50, batch_size=8, verbose=2,
+                        validation_data=(X_test, y_test),
+                        callbacks=[tensorboard, checkpoint]
                         )
 
     score = model.evaluate(X_test, y_test, verbose=0)
