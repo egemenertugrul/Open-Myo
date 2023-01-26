@@ -97,16 +97,18 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter):
         large_chunks = large_chunks.reshape(-1, 8, r)
         for chunk in large_chunks:
             # overlapping_segmentation_fn = partial(overlapping_segmentation_2, n_samples=segment_length, skip=skip)
-            # segments = np.array(list(map(overlapping_segmentation_fn, chunk)))# .reshape(-1, segment_length, channels)
-
+            # segments = np.array(list(map(overlapping_segmentation_fn, chunk)))  # .reshape(-1, segment_length, channels)
+            #
             # wl_applied = np.apply_along_axis(wl, axis=2, arr=segments).reshape(-1, channels)
             # rms_applied = np.apply_along_axis(rms, axis=2, arr=segments).reshape(-1, channels)
             # zc_applied = np.apply_along_axis(zc, axis=2, arr=segments).reshape(-1, channels)
-            #
+            # #
             # wl_applied = np.divide(wl_applied, 13008)
             # rms_applied = np.divide(rms_applied, 128)
-            # zc_applied = np.divide(zc_applied, 128)
+            #
             # x_data = np.concatenate((wl_applied, rms_applied, zc_applied), axis=1)
+
+            # X_data.append(rms_applied)
 
             x_data = chunk.reshape(-1, channels)
             x_data = np.interp(x_data, (-128, 127), (-1, +1))
@@ -137,7 +139,8 @@ if __name__ == '__main__':
     gestures = ['rock', 'paper', 'scissors']  # , 'paper', 'scissors'
     arms = ['r']
 
-    n_steps, n_length, n_features = 4, 50, 8
+    n_steps, n_length, n_features = 4, 50, 8  # ops happen on 50
+    # n_steps, n_length, n_features = 3, 6, 8
 
     X_data, Y_data = parse_recordings_as_dataset(subjects, gestures, arms)
     X_data = X_data.reshape((X_data.shape[0], n_steps, n_length, n_features))
@@ -148,8 +151,7 @@ if __name__ == '__main__':
 
     model = Sequential()
 
-    model.add(
-    TimeDistributed(Conv1D(filters=64, kernel_size=3, activation='relu'), input_shape=(None, n_length, n_features)))
+    model.add(TimeDistributed(Conv1D(filters=64, kernel_size=3, activation='relu'), input_shape=(None, n_length, n_features)))
     model.add(TimeDistributed(Conv1D(filters=64, kernel_size=3, activation='relu')))
     model.add(TimeDistributed(Dropout(0.5)))
     model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
@@ -171,8 +173,9 @@ if __name__ == '__main__':
     # RMSprop: lr=0.001, rho=0.9,                   epsilon=1e-8, decay=0.
     # SGD    : lr=0.01,  momentum=0.,                             decay=0.
 
-    learning_rate = 0.0001
-    opt = Adam(lr=learning_rate, decay=1e-6)
+    learning_rate = 0.001
+    opt_fn = Adam
+    opt = opt_fn(lr=learning_rate, decay=1e-6)
 
     loss_fn = 'binary_crossentropy' if y_train.shape[1] == 1 else 'categorical_crossentropy'
 

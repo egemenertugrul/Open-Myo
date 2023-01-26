@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import SpanSelector
+from matplotlib.widgets import SpanSelector, Button
 import pandas as pd
+from sklearn import preprocessing
 
 from features import disjoint_segmentation, wl, overlapping_segmentation, rms, mav, zc
 
@@ -22,7 +23,7 @@ y = np.array(y)
 props = dict(boxstyle='round', facecolor='white', alpha=0.35)
 default_alpha_val = 0.2
 
-fig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(8, 6))
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, figsize=(8, 6))
 
 ax1.set_title('Press left mouse button and drag '
               'to select a region in the top graph')
@@ -84,7 +85,10 @@ def on_selector_move(xmin, xmax):
 
 desired_range = 200
 
+selected_data = None
+
 def on_selector_select(xmin, xmax):
+    global selected_data
     x_range = x[-1] - x[0]
 
     if x_range < desired_range:
@@ -128,6 +132,8 @@ def on_selector_select(xmin, xmax):
 
     ax2.clear()
     ax3.clear()
+
+    selected_data = y[indmin:indmax].T
 
     signals_length = len(y[indmin:indmax].T)
     feature_plots_1 = [[] for i in range(signals_length)]
@@ -257,6 +263,38 @@ span = SpanSelector(
     interactive=True,
     drag_from_anywhere=True
 )
+
+predictButton = Button(ax4, 'Predict')
+
+import model_test
+
+model = None
+
+def predict(e):
+    global selected_data; global model
+    if model is None:
+        model = model_test.load_best_model()
+
+    if selected_data is not None:
+        gestures = ['rock', 'paper', 'scissors']  # , 'paper', 'scissors'
+        lb = preprocessing.LabelBinarizer()
+
+        selected_data = selected_data.reshape(-1, 8, 200)
+        n_steps, n_length, n_features = 4, 50, 8  # ops happen on 50
+        x_data = selected_data.reshape((selected_data.shape[0], n_steps, n_length, n_features))
+
+        print(x_data)
+        prediction = model.predict(x_data)
+        print(prediction)
+        lb.fit(gestures)
+        pred_dec = lb.inverse_transform(prediction)
+        all = lb.transform(gestures)
+        print(all, pred_dec)
+
+
+
+predictButton.on_clicked(predict)
+
 # Set useblit=True on most backends for enhanced performance.
 
 
