@@ -225,17 +225,19 @@ def runGraphIMU(imu_queue: multiprocessing.Queue):
 
 
 class MainLoopThread(threading.Thread):
-    def __init__(self, imu_queues: List[multiprocessing.Queue], emg_queues: List[multiprocessing.Queue]):
+    def __init__(self, imu_queues: List[multiprocessing.Queue], emg_queues: List[multiprocessing.Queue], print_hz: bool = True):
         super(MainLoopThread, self).__init__(daemon=True)
         self.imu_queues = imu_queues
         self.emg_queues = emg_queues
+        self.print_hz = print_hz
         self.start()
 
     def run(self):
         imu_t0 = time.time()
         emg_t0 = time.time()
-        imu_count = 0
-        emg_count = 0
+        if self.print_hz:
+            imu_count = 0
+            emg_count = 0
         while True:
             json_message = json.loads(socket.recv_json())
             topic = json_message["topic"]
@@ -249,23 +251,25 @@ class MainLoopThread(threading.Thread):
                     imu_queue.put(data)
 
                 # print(packet)
-                time_now = time.time()
-                imu_count = imu_count + 1
-                if time_now - imu_t0 > 1:
-                    imu_t0 = time.time()
-                    print("IMU Hz: ", imu_count)
-                    imu_count = 0
+                if self.print_hz:
+                    time_now = time.time()
+                    imu_count = imu_count + 1
+                    if time_now - imu_t0 > 1:
+                        imu_t0 = time.time()
+                        print("IMU Hz: ", imu_count)
+                        imu_count = 0
 
             elif topic == ZMQ_Topic.EMG:
                 for emg_queue in self.emg_queues:
                     emg_queue.put(data)
 
-                time_now = time.time()
-                emg_count = emg_count + 1
-                if time_now - emg_t0 > 1:
-                    emg_t0 = time.time()
-                    print("EMG Hz: ", emg_count)
-                    emg_count = 0
+                if self.print_hz:
+                    time_now = time.time()
+                    emg_count = emg_count + 1
+                    if time_now - emg_t0 > 1:
+                        emg_t0 = time.time()
+                        print("EMG Hz: ", emg_count)
+                        emg_count = 0
 
 
 class KeyboardThread(threading.Thread):
@@ -436,7 +440,7 @@ if __name__ == '__main__':
             "(r)ecord \n\t<relative_recording_directory('default: recordings', str)>\n\t<recording_len ('default: -1', "
             "int)>\n\t<file_format ('default: csv', str)>")
 
-    mainLoopThread = MainLoopThread(imuQueues, emgQueues)
+    mainLoopThread = MainLoopThread(imuQueues, emgQueues, print_hz=not isRecordEMG)
     # asyncio.run(Loop([imuQueue], [emgQueue, emgQueueToRecord]))
 
     for process in all_processes:

@@ -11,7 +11,7 @@ from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 from keras.layers import LSTM, Dense, Dropout, BatchNormalization, TimeDistributed, Conv1D, MaxPooling1D, Flatten
 from keras.optimizer_v2.adam import Adam
 
-from rnn.GridCV_scores_printer import save_gridcv_scores
+from rnn.gridcv_scores_printer import save_gridcv_scores
 
 #conv_dropout_rate=.5, regular_dropout_rate=.2, recurrent_dropout_rate=.35
 def create_model(input_shape, output_shape, conv_dropout_rate, regular_dropout_rate, recurrent_dropout_rate):
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     input_shape = (None, n_length, n_features)
     output_shape = n_gestures
 
-    isGridCV = True
+    isGridCV = False
 
     if not isGridCV:
         epochs = 50

@@ -100,7 +100,7 @@ class Recorder(BaseEventEmitter):
             return
 
         if self.desiredRecordingLength > 0:
-            if self.lastRecording.get_data_count() + 1 >= self.desiredRecordingLength:
+            if self.lastRecording.get_data_count() + 1 > self.desiredRecordingLength:
                 print("Desired recording length reached")
                 self.save_recording()
                 return

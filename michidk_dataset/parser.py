@@ -12,16 +12,18 @@ rootdir = os.path.dirname(os.path.realpath(__file__))
 
 ARM_SET = ['l', 'r']
 
+
 class Michidk_Recording(Recording):
-    def __init__(self,  *args, gesture, take):
+    def __init__(self, *args, gesture, take):
         super(Michidk_Recording, self).__init__(*args)
         self.gesture = gesture
         self.take = take
 
+
 def parse_recordings(
         subjects_filter: range(1, MICHIDK_SUBJECTS_COUNT + 1),
         gestures_filter=MICHIDK_GESTURE_SET,
-        arms_filter = ARM_SET,
+        arms_filter=ARM_SET,
         file_type_filter=('emg')):
     if subjects_filter.start < 1 or subjects_filter.stop > MICHIDK_SUBJECTS_COUNT + 1:
         raise Exception("Error! Check subjects filter.")
@@ -63,9 +65,10 @@ def parse_recordings(
                     recordings.append(recording)
     return recordings
 
+
 def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter):
     recs: List[Michidk_Recording] = parse_recordings(
-        subjects_filter= subjects_filter, # range(10,11), #
+        subjects_filter=subjects_filter,  # range(10,11), #
         gestures_filter=gestures_filter,
         arms_filter=arms_filter
     )
@@ -78,11 +81,11 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter):
     Y_data = []
     for rec in recs:
         recording_data = rec.get_data()
-        # large_chunks = disjoint_segmentation_2(recording_data, 200).reshape(-1, 8, 200)
         s = 150
         r = 200
 
-        large_chunks = recording_data[s:s+r]
+        # large_chunks = disjoint_segmentation_2(recording_data, 200).reshape(-1, 8, 200)
+        large_chunks = recording_data[s:s + r]
         large_chunks = large_chunks.reshape(-1, 8, r)
         for chunk in large_chunks:
             # overlapping_segmentation_fn = partial(overlapping_segmentation_2, n_samples=segment_length, skip=skip)
@@ -122,5 +125,3 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter):
     return X_data, Y_data_enc
 
     # print(len(X_data), len(Y_data_enc))
-
-

@@ -107,3 +107,6 @@ ENV/
 /logs/
 /models/
 /michidk_dataset/
+/rnn/logs/
+/rnn/models/
+/recordings/
