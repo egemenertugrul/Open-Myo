@@ -106,4 +106,4 @@ ENV/
 .idea/
 /logs/
 /models/
-/michidk-dataset/
+/michidk_dataset/

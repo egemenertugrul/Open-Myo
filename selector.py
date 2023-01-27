@@ -4,7 +4,7 @@ from matplotlib.widgets import SpanSelector, Button
 import pandas as pd
 from sklearn import preprocessing
 
-from features import disjoint_segmentation, wl, overlapping_segmentation, rms, mav, zc
+from features import wl, overlapping_segmentation, rms
 
 n_samples = 52
 skip = 5
@@ -16,7 +16,7 @@ signal_range = range(0, 8)
 signal_range_length = len(signal_range)
 
 # y = pd.read_csv("recordings/palm_open_0.csv", usecols = signal_range)
-y = pd.read_csv("michidk-dataset/s1_r_1/s1_r_1-paper-4-emg.csv", usecols = range(2, 10))
+y = pd.read_csv("michidk_dataset/s1_r_1/s1_r_1-paper-4-emg.csv", usecols = range(2, 10))
 x = range(1, y.shape[0] + 1)
 y = np.array(y)
 
@@ -266,7 +266,7 @@ span = SpanSelector(
 
 predictButton = Button(ax4, 'Predict')
 
-import model_test
+from rnn import model_test
 
 model = None
 

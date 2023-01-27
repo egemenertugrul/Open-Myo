@@ -46,8 +46,8 @@ socket = context.socket(zmq.PUB)
 socket.bind("tcp://*:%s" % port)
 
 emgMode = myo.EmgMode.FILT
-imuMode = myo.ImuMode.DATA
-classifierMode = myo.ClassifierMode.ON
+imuMode = myo.ImuMode.OFF
+classifierMode = myo.ClassifierMode.OFF
 
 
 if __name__ == '__main__':
