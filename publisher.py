@@ -45,7 +45,7 @@ port = 8358
 socket = context.socket(zmq.PUB)
 socket.bind("tcp://*:%s" % port)
 
-emgMode = myo.EmgMode.RAW_UNFILT
+emgMode = myo.EmgMode.RAW
 imuMode = myo.ImuMode.OFF
 classifierMode = myo.ClassifierMode.OFF
 
