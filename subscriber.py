@@ -233,6 +233,16 @@ class MainLoopThread(threading.Thread):
         self.start()
 
     def run(self):
+        host = 'raspberrypi.local'
+        port = 8358
+        url = 'tcp://' + host + ':' + str(port)
+        context = zmq.Context()
+        socket = context.socket(zmq.SUB)
+        socket.connect(url)
+        socket.setsockopt(zmq.SUBSCRIBE, b'')
+        socket.setsockopt(zmq.RCVHWM, 1000)
+        ctx = zmq.asyncio.Context()
+
         imu_t0 = time.time()
         emg_t0 = time.time()
         if self.print_hz:
@@ -386,16 +396,6 @@ def true_false_prompt(text: str, expected_vals: dict | None = None) -> bool:
 
 
 if __name__ == '__main__':
-    host = 'raspberrypi.local'
-    port = 8358
-    url = 'tcp://' + host + ':' + str(port)
-    context = zmq.Context()
-    socket = context.socket(zmq.SUB)
-    socket.connect(url)
-    socket.setsockopt(zmq.SUBSCRIBE, b'')
-    socket.setsockopt(zmq.RCVHWM, 1000)
-    ctx = zmq.asyncio.Context()
-
     imuQueues = []
     emgQueues = []
     all_processes = []

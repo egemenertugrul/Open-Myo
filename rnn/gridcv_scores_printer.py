@@ -1,5 +1,5 @@
 '''
-https://gist.github.com/willwest/fcb61b110b9f7f59db40
+Influenced by https://gist.github.com/willwest/fcb61b110b9f7f59db40
 '''
 
 import csv
@@ -22,24 +22,32 @@ def save_gridcv_scores(gs_clf: GridSearchCV, export_file: str):
     0.53510829168268614,0.0032487504805843725,"(1, 3)",english,0.001
     0.53717160066641034,0.0034025374855825019,"(1, 3)",None,0.001
     '''
-    with open(export_file, 'w') as outfile:
+    with open(export_file, 'w', newline='') as outfile:
         csvwriter = csv.writer(outfile, delimiter=',')
 
         # Create the header using the parameter names
-        header = ["mean", "std"]
+        header = ["rank", "mean", "std"]
         param_names = [param for param in gs_clf.param_grid]
         header.extend(param_names)
 
         csvwriter.writerow(header)
 
-        for config in gs_clf.cv_results_:
+        results = gs_clf.cv_results_
+
+        rows = []
+        for idx, param in enumerate(results['params']):
             # Get mean and standard deviation
-            mean = config[1]
-            std = np.std(config[2])
-            row = [mean, std]
+            rank = results['rank_test_score'][idx]
+            mean = results['mean_test_score'][idx]
+            std = results['std_test_score'][idx]
+            row = [rank, mean, std]
 
             # Get the list of parameter settings and add to row
-            params = [str(p) for p in config[0].values()]
+            params = [str(p) for p in param.values()]
             row.extend(params)
+            rows.append(row)
 
-            csvwriter.writerow(row)
+        rows = np.array(rows)
+        ind = np.argsort(rows[:,0]); rows = rows[ind]  # Order by ranking
+
+        csvwriter.writerows(rows)

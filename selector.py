@@ -18,9 +18,9 @@ ax3_fn = wl
 signal_range = range(0, 8)
 signal_range_length = len(signal_range)
 
-y = pd.read_csv("recordings/palm_open_0.csv", usecols = range(1, 9))
-# y = pd.read_csv("michidk_dataset/s6_r_4/s6_r_4-scissors-8-emg.c sv", usecols = range(2, 10))
-# y = pd.read_csv(FILEPATH, usecols=signal_range)
+# y = pd.read_csv("recordings/palm_open_0.csv", usecols = range(1, 9))
+# y = pd.read_csv("michidk_dataset/s6_r_4/s6_r_4-paper-9-emg.csv", usecols = range(2, 10))
+y = pd.read_csv(FILEPATH, usecols=signal_range)
 x = range(1, y.shape[0] + 1)
 y = np.array(y)
 

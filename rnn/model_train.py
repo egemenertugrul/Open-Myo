@@ -59,7 +59,7 @@ if __name__ == '__main__':
     input_shape = (None, n_length, n_features)
     output_shape = n_gestures
 
-    isGridCV = False
+    isGridCV = True
 
     if not isGridCV:
         epochs = 50
@@ -118,8 +118,8 @@ if __name__ == '__main__':
         model.save("models/{}".format(NAME))
     else:
         model = KerasClassifier(build_fn=create_model, input_shape=input_shape, output_shape=output_shape)
-        epochs = [30]  # [10, 30, 50, 70, 100]
-        batch_size = [12]  # [12, 24, 32, 48]
+        epochs = [30, 50, 70]
+        batch_size = [12, 24, 32]
         conv_dropout_rate = [0.25, 0.5, 0.75]
         regular_dropout_rate = [0.25, 0.5, 0.75]
         recurrent_dropout_rate = [0.25, 0.5, 0.75]

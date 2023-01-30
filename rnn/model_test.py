@@ -3,16 +3,17 @@ import os
 import numpy as np
 import pandas as pd
 import sklearn
-from keras.models import load_model
+from keras.models import load_model, Model
 from sklearn import preprocessing
 
 from michidk_dataset import MICHIDK_SUBJECTS_COUNT, MICHIDK_GESTURE_SET
 from michidk_dataset.parser import parse_recordings_as_dataset
 
 
-def load_best_model():
+def load_best_model() -> Model:
     current_filepath = os.path.dirname(os.path.realpath(__file__))
     model_name = "S1-13_G3_r_1674823233-49-0.825.model"
+    # model_name = "S1-13_G3_r_1674823233-17-0.816.model"
     model_path = os.path.join(current_filepath, "models", model_name)
     model = load_model(model_path)
     return model
