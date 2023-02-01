@@ -23,19 +23,21 @@ import pygame
 #     shared_array = shared_array.reshape(*shape)
 #     return shared_array
 
+r = 100
+
 def transform_data_for_inference(data):
     _data = np.array(data)
-    _data = _data.reshape(-1, 8, 200)
+    _data = _data.reshape(-1, 8, r)
     _data_norm = np.interp(_data, (-128, 127), (-1, +1))
-    _data_norm = _data_norm.reshape(1, 200, 8)
-    n_steps, n_length, n_features = 4, 50, 8  # ops happen on 50
-    data_for_inference = _data_norm.reshape((_data_norm.shape[0], n_steps, n_length, n_features))
-    return data_for_inference # .tolist()
+    _data_norm = _data_norm.reshape(1, r, 8)
+    # n_steps, n_length, n_features = 4, 50, 8  # ops happen on 50
+    # _data_norm = _data_norm.reshape((_data_norm.shape[0], n_steps, n_length, n_features))
+    return _data_norm # .tolist()
 
 
 def model_test_realtime(emgQueue: Queue, inference_buffer: Queue):
     buffer = []
-    buffer_len = 200
+    buffer_len = r
 
     def process_data(epoch_time, emg_data):
         nonlocal inference_buffer
@@ -76,11 +78,11 @@ def realtime_loop(inference_buffer: multiprocessing.Queue):
     if model is None:
         raise Exception("No model is found.")
 
-    FPS = 25
+    FPS = 4
 
     pygame.init()
 
-    gestures = ['rock', 'paper', 'scissors']  # , 'paper', 'scissors'
+    gestures = sorted(['rock', 'paper', 'scissors'])  # , 'paper', 'scissors'
     lb = preprocessing.LabelBinarizer()
     lb.fit(gestures)
 
@@ -117,12 +119,15 @@ def realtime_loop(inference_buffer: multiprocessing.Queue):
 
             # print(fps_str)
 
-            # print(predictions)
+            print(predictions)
             pred_dec = lb.inverse_transform(predictions)
             pred_str = pred_dec[0]
-            if last_pred_str != pred_str:
+            if last_pred_str != pred_str or True:
                 last_pred_str = pred_str
-                print(pred_str)
+                print(pred_str, predictions[0][gestures.index(pred_str)])
+
+            # z = list(zip(gestures, predictions[0]))
+            # print(z)
 
         t2 = time.time()
         sleep(max(0.0, desired_processing_time - inference_time))

@@ -1,12 +1,15 @@
+from functools import partial
+
+from features import disjoint_segmentation_2, wl, rms, zc, overlapping_segmentation_2
 from michidk_dataset import MICHIDK_SUBJECTS_COUNT, MICHIDK_GESTURE_SET
 
 import os
-from typing import List, Tuple
+from typing import List
 import numpy as np
 from sklearn import preprocessing
 
 from myo_zmq.recorder import Recording
-from features import disjoint_segmentation_2, wl, overlapping_segmentation, overlapping_segmentation_2, rms, zc
+from filters import filter_signal, rectify_signal, envelope_signal
 
 rootdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -66,7 +69,8 @@ def parse_recordings(
     return recordings
 
 
-def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter):
+def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter,
+                                postprocess=dict({'filter': True, 'rectify': True, 'envelope': False})):
     recs: List[Michidk_Recording] = parse_recordings(
         subjects_filter=subjects_filter,  # range(10,11), #
         gestures_filter=gestures_filter,
@@ -82,31 +86,49 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter):
     for rec in recs:
         recording_data = rec.get_data()
         s = 150
-        r = 200
+        r = 400
 
-        # large_chunks = disjoint_segmentation_2(recording_data, 200).reshape(-1, 8, 200)
-        large_chunks = recording_data[s:s + r]
-        large_chunks = large_chunks.reshape(-1, 8, r)
+        large_chunks = disjoint_segmentation_2(recording_data, r).reshape(-1, 8, r)
+        # large_chunks = recording_data[s:s + r]
+        # large_chunks = large_chunks.reshape(-1, 8, r)
+        x = []
         for chunk in large_chunks:
-            # overlapping_segmentation_fn = partial(overlapping_segmentation_2, n_samples=segment_length, skip=skip)
-            # segments = np.array(list(map(overlapping_segmentation_fn, chunk)))  # .reshape(-1, segment_length, channels)
-            #
+            x_data = chunk
+
+            x_data = np.interp(x_data, (-128, 127), (-1, +1))
+            if np.any(postprocess.values()):
+                if postprocess['filter']:
+                    x_data = np.apply_along_axis(func1d=filter_signal, axis=len(x_data.shape) - 1, arr=x_data, order=1,
+                                                 sfreq=200, high_band=10,
+                                                 low_band=80)
+                if postprocess['rectify']:
+                    x_data = rectify_signal(x_data)
+
+                if postprocess['envelope']:
+                    x_data = np.apply_along_axis(func1d=envelope_signal, axis=len(x_data.shape) - 1, arr=x_data,
+                                                 order=5,
+                                                 low_pass=80, sfreq=200)
+
+            # x_data = x_data.reshape(-1, channels)
+            # X_data.append(x_data)
+
+            overlapping_segmentation_fn = partial(overlapping_segmentation_2, n_samples=segment_length, skip=skip)
+            segments = np.array(
+                list(map(overlapping_segmentation_fn, x_data)))# .reshape(-1, channels) # .reshape(-1, segment_length, channels)
+
             # wl_applied = np.apply_along_axis(wl, axis=2, arr=segments).reshape(-1, channels)
             # rms_applied = np.apply_along_axis(rms, axis=2, arr=segments).reshape(-1, channels)
             # zc_applied = np.apply_along_axis(zc, axis=2, arr=segments).reshape(-1, channels)
-            # #
+            #
             # wl_applied = np.divide(wl_applied, 13008)
             # rms_applied = np.divide(rms_applied, 128)
-            #
+
             # x_data = np.concatenate((wl_applied, rms_applied, zc_applied), axis=1)
 
-            # X_data.append(rms_applied)
+            # X_data.append(wl_applied)
 
-            x_data = chunk.reshape(-1, channels)
-            x_data = np.interp(x_data, (-128, 127), (-1, +1))
-            X_data.append(x_data)
-
-            # X_data.extend(segments)
+            x.extend(segments)
+        X_data.append(x)
         Y_data.extend([rec.gesture] * len(large_chunks))
 
     X_data = np.array(X_data)

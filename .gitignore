@@ -110,3 +110,4 @@ ENV/
 /rnn/logs/
 /rnn/models/
 /recordings/
+/rnn/grid_cv_results/

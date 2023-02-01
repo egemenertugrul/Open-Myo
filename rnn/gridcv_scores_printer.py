@@ -27,15 +27,17 @@ def save_gridcv_scores(gs_clf: GridSearchCV, export_file: str):
 
         # Create the header using the parameter names
         header = ["rank", "mean", "std"]
-        param_names = [param for param in gs_clf.param_grid]
+
+        results = gs_clf.cv_results_
+        params = results['params']
+
+        param_names = params[0].keys()
         header.extend(param_names)
 
         csvwriter.writerow(header)
 
-        results = gs_clf.cv_results_
-
         rows = []
-        for idx, param in enumerate(results['params']):
+        for idx, param in enumerate(params):
             # Get mean and standard deviation
             rank = results['rank_test_score'][idx]
             mean = results['mean_test_score'][idx]

@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn import preprocessing
 
 from features import wl, overlapping_segmentation, rms
+from filters import process_signal
 
 MODEL_PATH = "S1-13_G3_r_1674823233-49-0.825.model"
 FILEPATH = "recordings/paper_1.csv"
@@ -23,6 +24,17 @@ signal_range_length = len(signal_range)
 y = pd.read_csv(FILEPATH, usecols=signal_range)
 x = range(1, y.shape[0] + 1)
 y = np.array(y)
+
+# def butter_lowpass(cutoff, fs, order=5):
+#     nyq = 0.5 * fs
+#     normal_cutoff = cutoff / nyq
+#     b, a = butter(order, normal_cutoff, btype='low', analog=False)
+#     return b, a
+#
+# def butter_lowpass_filtfilt(data, cutoff, fs, order=5):
+#     b, a = butter_lowpass(cutoff, fs, order=order)
+#     y = filtfilt(b, a, data)
+#     return y
 
 props = dict(boxstyle='round', facecolor='white', alpha=0.35)
 default_alpha_val = 0.2
@@ -49,8 +61,23 @@ for idx, col in enumerate(y.T):
     col = np.interp(col, (-128, 127), (-1, +1))
     ax1.set_xlim(x[0], x[-1])
     ax1.set_ylim(-1, 1)
-    new_plot = ax1.plot(x, col, c=RGB_tuples[idx], alpha=default_alpha_val)
-    signal_plots.append(new_plot)
+
+    # new_plot = ax1.plot(x, col, c=RGB_tuples[idx], alpha=default_alpha_val)
+    # signal_plots.append(new_plot)
+
+    fs = 200
+    cutoff = fs / 4
+    order = 1
+
+    ## col_filtered = butter_lowpass_filtfilt(col, cutoff=cutoff, fs=fs, order=5)  # cutoff: [0, fs)
+    emg_filtered, emg_rectified, emg_envelope = process_signal(col, order=4, low_pass=10, sfreq=200, high_band=4, low_band=45)
+    new_plot_filtered = ax1.plot(x, emg_rectified, c='red', alpha=default_alpha_val)
+    signal_plots.append(new_plot_filtered)
+
+    ## col_filtered = butter_lowpass_filtfilt(col, cutoff=cutoff, fs=fs*2, order=5)  # cutoff: [0, fs)
+    emg_filtered, emg_rectified, emg_envelope = process_signal(col, order=5, low_pass=10, sfreq=200, high_band=4, low_band=90)
+    new_plot_filtered = ax1.plot(x, emg_rectified, c='blue', alpha=default_alpha_val)
+    signal_plots.append(new_plot_filtered)
 
 
 # lc = mc.LineCollection(lines, colors=c, linewidths=2)

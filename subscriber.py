@@ -119,6 +119,7 @@ def runGraphEMG(emg_queue):
             else:
                 emg_data = list(map(float, data['emg']))
                 process_data(epoch_time, emg_data)
+
         d_plot_2.flush()
 
 

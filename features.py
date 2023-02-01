@@ -19,8 +19,22 @@ def disjoint_segmentation(emg, n_samples=150):
     length = 0
     return segmented_emg
 
+
 def disjoint_segmentation_2(emg, n_samples=150):
-    n_segments = int(np.floor(emg.shape[0] / n_samples))  # number of segments
+    signal = emg
+    div = signal.shape[0] / n_samples
+    n_segments = int(np.floor(div))  # number of segments
+    needs_pad = int(np.ceil(div)) != n_segments
+
+    if needs_pad:
+        # frac1 = (signal.shape[0] / (n_samples / 2)) % 1
+        frac2 = (signal.shape[0] / n_samples) % 1
+        if frac2 > 0.5:
+            n_pads = int(n_samples - np.round(frac2 * n_samples))
+            # print(signal.shape[0], n_pads)
+            signal = np.pad(signal, pad_width=((0, n_pads), (0, 0)), mode='median')
+            n_segments = n_segments + 1
+
     # length = 0
     # segmented_emg = np.zeros((n_samples, n_segments))
     # for s in range(n_segments):
@@ -33,7 +47,8 @@ def disjoint_segmentation_2(emg, n_samples=150):
     segments = []
     for seg in range(n_segments):
         s = seg * n_samples
-        segments.append(emg[s:s+n_samples])
+        segments.append(signal[s:s + n_samples])
+
     return np.array(segments)
 
 
@@ -60,6 +75,7 @@ def overlapping_segmentation(region, n_samples=52, skip=5):
 
     return np.array(segmented_emg)
 
+
 def overlapping_segmentation_2(region, n_samples=52, skip=5):
     total_duration = len(region)
     # expected_segment_count = math.floor(((total_duration - n_samples) / skip) + 1)
@@ -75,9 +91,11 @@ def overlapping_segmentation_2(region, n_samples=52, skip=5):
 
     return np.array(segmented_emg)
 
+
 def mav(segment):
     mav = np.mean(np.abs(segment))
     return mav
+
 
 # MAX: 128
 def rms(segment):
@@ -94,6 +112,7 @@ def ssi(segment):
     ssi = np.sum(np.abs(np.power(segment, 2)))
     return ssi
 
+
 # MAX: segment length - 1 (e.g. 51)
 def zc(segment):
     nz_segment = list()
@@ -107,14 +126,17 @@ def zc(segment):
             zc = zc + 1
     return zc
 
+
 # MAX: 13005
 def wl(segment):
     wl = np.sum(np.abs(np.diff(segment)))
     return wl
 
+
 if __name__ == '__main__':
     a = [-128, 127] * 26
     print(zc(a))
+
 
 # def ssc(segment):
 #    N = len(segment)
