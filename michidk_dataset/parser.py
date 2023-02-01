@@ -91,7 +91,7 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter,
         large_chunks = disjoint_segmentation_2(recording_data, r).reshape(-1, 8, r)
         # large_chunks = recording_data[s:s + r]
         # large_chunks = large_chunks.reshape(-1, 8, r)
-        x = []
+        # x = []
         for chunk in large_chunks:
             x_data = chunk
 
@@ -109,12 +109,12 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter,
                                                  order=5,
                                                  low_pass=80, sfreq=200)
 
-            # x_data = x_data.reshape(-1, channels)
-            # X_data.append(x_data)
+            x_data = x_data.reshape(-1, channels)
+            X_data.append(x_data)
 
-            overlapping_segmentation_fn = partial(overlapping_segmentation_2, n_samples=segment_length, skip=skip)
-            segments = np.array(
-                list(map(overlapping_segmentation_fn, x_data)))# .reshape(-1, channels) # .reshape(-1, segment_length, channels)
+            # overlapping_segmentation_fn = partial(overlapping_segmentation_2, n_samples=segment_length, skip=skip)
+            # segments = np.array(
+            #     list(map(overlapping_segmentation_fn, x_data)))# .reshape(-1, channels) # .reshape(-1, segment_length, channels)
 
             # wl_applied = np.apply_along_axis(wl, axis=2, arr=segments).reshape(-1, channels)
             # rms_applied = np.apply_along_axis(rms, axis=2, arr=segments).reshape(-1, channels)
@@ -127,8 +127,8 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter,
 
             # X_data.append(wl_applied)
 
-            x.extend(segments)
-        X_data.append(x)
+            # x.extend(segments)
+        # X_data.append(x)
         Y_data.extend([rec.gesture] * len(large_chunks))
 
     X_data = np.array(X_data)
