@@ -23,15 +23,17 @@ import pygame
 #     shared_array = shared_array.reshape(*shape)
 #     return shared_array
 
-r = 100
+r = 200
 
 def transform_data_for_inference(data):
     _data = np.array(data)
     _data = _data.reshape(-1, 8, r)
     _data_norm = np.interp(_data, (-128, 127), (-1, +1))
     _data_norm = _data_norm.reshape(1, r, 8)
-    # n_steps, n_length, n_features = 4, 50, 8  # ops happen on 50
-    # _data_norm = _data_norm.reshape((_data_norm.shape[0], n_steps, n_length, n_features))
+
+    n_steps, n_length, n_features = 4, 50, 8  # ops happen on 50
+    _data_norm = _data_norm.reshape((_data_norm.shape[0], n_steps, n_length, n_features))
+
     return _data_norm # .tolist()
 
 

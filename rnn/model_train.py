@@ -23,23 +23,23 @@ def create_model(input_shape, output_shape, conv_dropout_rate, regular_dropout_r
     model = Sequential()
     model.add(Input(shape=input_shape))
 
-    n_steps = 10
-    # n_length = int(input_shape[1] / n_steps)
-    n_features = input_shape[-1]
+    # n_steps = 4
+    # # # n_length = int(input_shape[1] / n_steps)
+    # n_features = input_shape[-1]
+    #
+    # model.add(Reshape((n_steps, -1, n_features)))
+    # model.add(TimeDistributed(Conv1D(filters=64, kernel_size=3, activation='relu')))
+    # model.add(Dropout(.3))
+    # # model.add(BatchNormalization())
+    # model.add(TimeDistributed(Conv1D(filters=32, kernel_size=3, activation='relu')))
+    # # model.add(BatchNormalization())
+    # #
+    # model.add(TimeDistributed(Dropout(conv_dropout_rate)))
+    # model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
+    # model.add(TimeDistributed(Flatten()))
 
-    model.add(Reshape((n_steps, -1, n_features)))
-    model.add(TimeDistributed(Conv1D(filters=64, kernel_size=3, activation='relu')))
-    model.add(Dropout(.3))
-    # model.add(BatchNormalization())
-    model.add(TimeDistributed(Conv1D(filters=32, kernel_size=3, activation='relu')))
-    # model.add(BatchNormalization())
-
-    model.add(TimeDistributed(Dropout(conv_dropout_rate)))
-    model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
-    model.add(TimeDistributed(Flatten()))
-
-    model.add(Bidirectional(LSTM(250, return_sequences=True, recurrent_dropout=recurrent_dropout_rate, dropout=regular_dropout_rate, activation='tanh')))
-    model.add(Bidirectional(LSTM(250, return_sequences=False, recurrent_dropout=recurrent_dropout_rate, dropout=regular_dropout_rate, activation='tanh')))
+    model.add(LSTM(250, return_sequences=True, recurrent_dropout=recurrent_dropout_rate, dropout=regular_dropout_rate, activation='tanh'))
+    model.add(LSTM(250, return_sequences=False, recurrent_dropout=recurrent_dropout_rate, dropout=regular_dropout_rate, activation='tanh'))
     model.add(Dropout(.6))
     # model.add(BatchNormalization())
     model.add(Dense(80, activation='sigmoid'))
@@ -56,7 +56,7 @@ def create_model(input_shape, output_shape, conv_dropout_rate, regular_dropout_r
     opt = opt_fn(lr=learning_rate, decay=1e-6)
     loss_fn = 'binary_crossentropy' if output_shape == 1 else 'categorical_crossentropy'
     model.compile(loss=loss_fn, optimizer=opt, metrics=['accuracy'])
-    # model.summary()
+    model.summary()
     return model
 
 def create_model_experimental(input_shape, output_shape, conv_dropout_rate, regular_dropout_rate, recurrent_dropout_rate,
@@ -105,7 +105,7 @@ def create_model_experimental(input_shape, output_shape, conv_dropout_rate, regu
     return model
 
 if __name__ == '__main__':
-    subjects_filter = range(1, MICHIDK_SUBJECTS_COUNT + 1)  # range(1, 2)
+    subjects_filter = range(1, MICHIDK_SUBJECTS_COUNT + 1)
     gestures_filter = MICHIDK_GESTURE_SET
     n_gestures = len(gestures_filter)
     arms_filter = ['r']
@@ -119,8 +119,9 @@ if __name__ == '__main__':
                                                      'envelope': False
                                                  })
 
-    n_steps = 4
-    n_length, n_features = int(X_data.shape[1] / n_steps), 8  # ops happen on n_length
+    # n_steps = 4
+    # n_length, n_features = int(X_data.shape[1] / n_steps), 8  # ops happen on n_length
+
     # n_steps, n_length, n_features = 3, 6, 8
     # input_shape = (None, n_length, n_features)
     # X_data = X_data.reshape((X_data.shape[0], n_steps, n_length, n_features))

@@ -91,11 +91,12 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter,
         large_chunks = disjoint_segmentation_2(recording_data, r).reshape(-1, 8, r)
         # large_chunks = recording_data[s:s + r]
         # large_chunks = large_chunks.reshape(-1, 8, r)
-        # x = []
+        x = []
         for chunk in large_chunks:
             x_data = chunk
 
             x_data = np.interp(x_data, (-128, 127), (-1, +1))
+
             if np.any(postprocess.values()):
                 if postprocess['filter']:
                     x_data = np.apply_along_axis(func1d=filter_signal, axis=len(x_data.shape) - 1, arr=x_data, order=1,
@@ -109,26 +110,27 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter,
                                                  order=5,
                                                  low_pass=80, sfreq=200)
 
-            x_data = x_data.reshape(-1, channels)
-            X_data.append(x_data)
-
             # overlapping_segmentation_fn = partial(overlapping_segmentation_2, n_samples=segment_length, skip=skip)
             # segments = np.array(
             #     list(map(overlapping_segmentation_fn, x_data)))# .reshape(-1, channels) # .reshape(-1, segment_length, channels)
-
-            # wl_applied = np.apply_along_axis(wl, axis=2, arr=segments).reshape(-1, channels)
-            # rms_applied = np.apply_along_axis(rms, axis=2, arr=segments).reshape(-1, channels)
-            # zc_applied = np.apply_along_axis(zc, axis=2, arr=segments).reshape(-1, channels)
             #
+            # wl_applied = np.apply_along_axis(wl, axis=2, arr=segments)
+            # rms_applied = np.apply_along_axis(rms, axis=2, arr=segments)
+            # # zc_applied = np.apply_along_axis(zc, axis=2, arr=segments).T
+            # #
             # wl_applied = np.divide(wl_applied, 13008)
             # rms_applied = np.divide(rms_applied, 128)
-
-            # x_data = np.concatenate((wl_applied, rms_applied, zc_applied), axis=1)
-
-            # X_data.append(wl_applied)
+            #
+            # x_data = np.row_stack((wl_applied, rms_applied))
+            # x.extend(x_data)
 
             # x.extend(segments)
-        # X_data.append(x)
+
+            # x_data = x_data.reshape(-1, channels)
+
+            X_data.append(np.array(x_data))
+
+        # X_data.append(np.array(x))
         Y_data.extend([rec.gesture] * len(large_chunks))
 
     X_data = np.array(X_data)
@@ -147,3 +149,23 @@ def parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter,
     return X_data, Y_data_enc
 
     # print(len(X_data), len(Y_data_enc))
+
+
+if __name__ == '__main__':
+    subjects_filter = range(1, MICHIDK_SUBJECTS_COUNT + 1)
+    gestures_filter = MICHIDK_GESTURE_SET
+    n_gestures = len(gestures_filter)
+    arms_filter = ['r']
+
+    X_data, Y_data = parse_recordings_as_dataset(subjects_filter, gestures_filter, arms_filter,
+                                                 postprocess={
+                                                     'filter': True,
+                                                     'rectify': True,
+                                                     'envelope': False
+                                                 })
+
+    with open('X_data.npy', 'wb') as f:
+        np.save(file=f, arr=X_data)
+
+    with open('Y_data.npy', 'wb') as f:
+        np.save(file=f, arr=Y_data)

@@ -62,22 +62,22 @@ for idx, col in enumerate(y.T):
     ax1.set_xlim(x[0], x[-1])
     ax1.set_ylim(-1, 1)
 
-    # new_plot = ax1.plot(x, col, c=RGB_tuples[idx], alpha=default_alpha_val)
-    # signal_plots.append(new_plot)
+    new_plot = ax1.plot(x, col, c=RGB_tuples[idx], alpha=default_alpha_val)
+    signal_plots.append(new_plot)
 
     fs = 200
     cutoff = fs / 4
     order = 1
 
     ## col_filtered = butter_lowpass_filtfilt(col, cutoff=cutoff, fs=fs, order=5)  # cutoff: [0, fs)
-    emg_filtered, emg_rectified, emg_envelope = process_signal(col, order=4, low_pass=10, sfreq=200, high_band=4, low_band=45)
+    emg_filtered, emg_rectified, emg_envelope = process_signal(col, order=1, low_pass=10, sfreq=200, high_band=4, low_band=90)
     new_plot_filtered = ax1.plot(x, emg_rectified, c='red', alpha=default_alpha_val)
     signal_plots.append(new_plot_filtered)
 
     ## col_filtered = butter_lowpass_filtfilt(col, cutoff=cutoff, fs=fs*2, order=5)  # cutoff: [0, fs)
-    emg_filtered, emg_rectified, emg_envelope = process_signal(col, order=5, low_pass=10, sfreq=200, high_band=4, low_band=90)
-    new_plot_filtered = ax1.plot(x, emg_rectified, c='blue', alpha=default_alpha_val)
-    signal_plots.append(new_plot_filtered)
+    # emg_filtered, emg_rectified, emg_envelope = process_signal(col, order=5, low_pass=10, sfreq=200, high_band=4, low_band=90)
+    # new_plot_filtered = ax1.plot(x, emg_rectified, c='blue', alpha=default_alpha_val)
+    # signal_plots.append(new_plot_filtered)
 
 
 # lc = mc.LineCollection(lines, colors=c, linewidths=2)
